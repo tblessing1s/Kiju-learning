@@ -282,10 +282,6 @@ function home(){
    <div class="chips" role="group" aria-label="Word level">
     ${[["easy","Starter words"],["hard","Tricky words"]].map(([k,l])=>`<button class="chip" data-words="${k}" aria-pressed="${wordLevel===k}">${l}</button>`).join("")}
    </div><button class="go" id="goWords">Stomp!</button></div>
-  <div class="mode"><h2>World Stomp</h2><p>Stomp all 7 continents and swim all 5 oceans.</p>
-   <div class="chips" role="group" aria-label="World mode">
-    ${[["play","Play game"],["explore","Explore map"]].map(([k,l])=>`<button class="chip" data-world="${k}" aria-pressed="${worldMode===k}">${l}</button>`).join("")}
-   </div><button class="go" id="goWorld">Travel!</button></div>
   <div class="mode"><h2>Kaiju Quest</h2><p>12 rival monsters are hiding around the world. Find them and battle! <b>${questDone.length} of 12 beaten.</b></p>
    <div class="chips" role="group" aria-label="Battle questions">
     ${[["world","World questions"],["math","Math questions"]].map(([k,l])=>`<button class="chip" data-questq="${k}" aria-pressed="${questQ===k}">${l}</button>`).join("")}
@@ -302,8 +298,6 @@ function home(){
  app.querySelectorAll("[data-words]").forEach(b=>b.onclick=()=>{wordLevel=b.dataset.words;store.set("kz-words",wordLevel);home()});
  document.getElementById("goMath").onclick=()=>{ctx();sfx.roar();battle()};
  document.getElementById("goWords").onclick=()=>{ctx();sfx.roar();city()};
- app.querySelectorAll("[data-world]").forEach(b=>b.onclick=()=>{worldMode=b.dataset.world;store.set("kz-world",worldMode);home()});
- document.getElementById("goWorld").onclick=()=>{ctx();sfx.roar();worldMap()};
  app.querySelectorAll("[data-questq]").forEach(b=>b.onclick=()=>{questQ=b.dataset.questq;store.set("kz-questq",questQ);home()});
  document.getElementById("goQuest").onclick=()=>{ctx();sfx.roar();questEarned=0;quest()};
  document.getElementById("prizeInput").oninput=e=>{prize=e.target.value;store.set("kz-prize",prize)};
