@@ -278,10 +278,6 @@ function home(){
    <div class="chips" role="group" aria-label="Math type">
     ${[["add","Adding"],["sub","Taking away"],["mix","Mix"],["mul","Times 2, 5, 10"]].map(([k,l])=>`<button class="chip" data-math="${k}" aria-pressed="${mathLevel===k}">${l}</button>`).join("")}
    </div><button class="go" id="goMath">Fight!</button></div>
-  <div class="mode"><h2>Stomp the City</h2><p>Hear a word, find its building, stomp it flat.</p>
-   <div class="chips" role="group" aria-label="Word level">
-    ${[["easy","Starter words"],["hard","Tricky words"]].map(([k,l])=>`<button class="chip" data-words="${k}" aria-pressed="${wordLevel===k}">${l}</button>`).join("")}
-   </div><button class="go" id="goWords">Stomp!</button></div>
   <div class="mode"><h2>Kaiju Quest</h2><p>12 rival monsters are hiding around the world. Find them and battle! <b>${questDone.length} of 12 beaten.</b></p>
    <div class="chips" role="group" aria-label="Battle questions">
     ${[["world","World questions"],["math","Math questions"]].map(([k,l])=>`<button class="chip" data-questq="${k}" aria-pressed="${questQ===k}">${l}</button>`).join("")}
@@ -295,9 +291,7 @@ function home(){
  </div>`;
  app.querySelectorAll("[data-hero]").forEach(b=>b.onclick=()=>{heroId=b.dataset.hero;store.set("kz-hero",heroId);ctx();sfx.roar();home()});
  app.querySelectorAll("[data-math]").forEach(b=>b.onclick=()=>{mathLevel=b.dataset.math;store.set("kz-math",mathLevel);home()});
- app.querySelectorAll("[data-words]").forEach(b=>b.onclick=()=>{wordLevel=b.dataset.words;store.set("kz-words",wordLevel);home()});
  document.getElementById("goMath").onclick=()=>{ctx();sfx.roar();battle()};
- document.getElementById("goWords").onclick=()=>{ctx();sfx.roar();city()};
  app.querySelectorAll("[data-questq]").forEach(b=>b.onclick=()=>{questQ=b.dataset.questq;store.set("kz-questq",questQ);home()});
  document.getElementById("goQuest").onclick=()=>{ctx();sfx.roar();questEarned=0;quest()};
  document.getElementById("prizeInput").oninput=e=>{prize=e.target.value;store.set("kz-prize",prize)};
