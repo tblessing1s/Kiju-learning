@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kaiju Study Battle</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Baloo+2:wght@500;700;800&display=swap">
+<style>
+/* Layout: one-screen game. Night-city arena on top, big chunky answer buttons below. Single dark look by choice. */
+:root{
+  --night:#141a33; --night-2:#1f2850; --glow:#ffb547; --crystal:#5fd4ff;
+  --ink:#f4f1ff; --ink-dim:#a9b0d6; --good:#5fe08a; --bad:#ff6b6b;
+  --steel:#8f9ab8; --shell:#e8743b;
+  --display:"Bungee", "Impact", "Arial Black", sans-serif;
+  --body:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:18px;
+  background-image:radial-gradient(circle at 80% 8%, #fff6 0 2px, transparent 3px),
+    radial-gradient(circle at 20% 15%, #fff5 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 55% 5%, #fff4 0 1.5px, transparent 2.5px),
+    linear-gradient(var(--night), var(--night-2));
+  background-attachment:fixed}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 32px;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:.02em}
+h1{font-size:clamp(28px,7vw,46px);line-height:1;color:var(--glow);text-shadow:0 3px 0 #a3501a}
+h2{font-size:clamp(22px,5vw,30px)}
+p{margin:0}
+button{font-family:var(--body);cursor:pointer;border:0;color:inherit}
+button:focus-visible,input:focus-visible{outline:4px solid var(--crystal);outline-offset:3px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.stars{font-family:var(--display);font-size:20px;background:#0006;border-radius:999px;padding:6px 16px;font-variant-numeric:tabular-nums}
+.stars b{color:var(--glow);font-weight:400}
+
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:center}
+.hero>svg{width:100%;max-width:260px}
+.hero p{color:var(--ink-dim);font-size:19px;line-height:1.4}
+@media (max-width:520px){.hero{grid-template-columns:1fr;justify-items:center;text-align:center}.hero>svg{max-width:200px}}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.mode{background:var(--night-2);border:3px solid #ffffff22;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.mode h2{color:var(--crystal)}
+.mode p{color:var(--ink-dim);font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:#0005;border:2px solid #ffffff30;border-radius:999px;padding:6px 14px;font-size:16px;font-weight:700}
+.chip[aria-pressed="true"]{background:var(--crystal);color:var(--night);border-color:var(--crystal)}
+.go{font-family:var(--display);font-size:22px;background:var(--glow);color:#3a1a05;border-radius:16px;padding:12px;box-shadow:0 5px 0 #a3501a;transition:transform .08s}
+.go:active{transform:translateY(4px);box-shadow:0 1px 0 #a3501a}
+.prize{background:#0004;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.prize label{font-size:15px;color:var(--ink-dim);font-weight:700}
+.prize input{width:100%;font:inherit;font-size:17px;background:var(--night);color:var(--ink);border:2px solid #ffffff30;border-radius:12px;padding:8px 12px}
+.bar{height:16px;background:#0007;border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--glow),#ffd98a);border-radius:999px;transition:width .4s}
+.small{font-size:14px;color:var(--ink-dim)}
+
+/* arena */
+.arena{position:relative;background:linear-gradient(#0000 55%, #0b0f22 55%);border-radius:22px;padding:12px;overflow:hidden;min-height:220px}
+.skyline{position:absolute;left:0;right:0;bottom:45%;height:70px;display:flex;align-items:flex-end;gap:4px;opacity:.35;padding:0 6px}
+.skyline span{flex:1;background:#2c3a75;border-radius:3px 3px 0 0}
+.fighters{position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.fighter{width:44%;display:flex;flex-direction:column;gap:6px;align-items:center}
+.fighter svg{width:100%;max-width:200px;height:auto}
+.hp{width:100%;display:flex;flex-direction:column;gap:3px;font-size:14px;font-weight:800}
+.hp .bar{height:14px}
+.hp.enemy .bar i{background:linear-gradient(90deg,var(--bad),#ff9f7a)}
+.hp.me .bar i{background:linear-gradient(90deg,var(--crystal),#b9f0ff)}
+.lunge{animation:lunge .45s ease}
+@keyframes lunge{40%{transform:translateX(30%) rotate(-6deg)}}
+.ouch{animation:ouch .45s ease}
+@keyframes ouch{20%,60%{transform:translateX(8px);filter:brightness(2.2)}40%,80%{transform:translateX(-8px)}}
+.roster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pickm{background:#0005;border:3px solid #ffffff22;border-radius:14px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;line-height:1.1;min-width:0}
+.pickm svg{width:100%;height:auto}
+.pickm[aria-pressed="true"]{border-color:var(--glow);background:#ffb54726}
+.beam{position:absolute;left:30%;right:28%;top:38%;height:18px;border-radius:999px;background:linear-gradient(90deg,#fff,var(--beam,var(--crystal)),#fff);box-shadow:0 0 24px var(--beam,var(--crystal)),0 0 60px var(--beam,var(--crystal));transform-origin:left;transform:scaleX(0);opacity:0}
+.beam.fire{animation:beam .7s ease}
+@keyframes beam{0%{transform:scaleX(0);opacity:1}50%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+.pop{position:absolute;right:16%;top:12%;font-family:var(--display);font-size:30px;color:var(--glow);pointer-events:none;opacity:0;text-shadow:0 3px 0 #000}
+.pop.show{animation:pop .9s ease}
+@keyframes pop{0%{opacity:0;transform:scale(.5)}25%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:translateY(-30px)}}
+
+.charge{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;color:var(--crystal)}
+.charge .cells{display:flex;gap:6px}
+.charge .cells i{width:28px;height:14px;border-radius:5px;background:#0007;border:2px solid #5fd4ff55}
+.charge .cells i.on{background:var(--crystal);box-shadow:0 0 10px var(--crystal)}
+
+.question{text-align:center;font-family:var(--display);font-size:clamp(40px,12vw,68px);line-height:1;font-variant-numeric:tabular-nums}
+.hint{text-align:center;color:var(--ink-dim);min-height:28px;font-weight:700}
+.hint.good{color:var(--good)} .hint.bad{color:var(--bad)}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ans{font-family:var(--display);font-size:clamp(28px,8vw,40px);background:var(--night-2);border:3px solid #ffffff2a;border-radius:20px;padding:14px 8px;box-shadow:0 5px 0 #0b0f22;font-variant-numeric:tabular-nums;transition:transform .08s}
+.ans:active{transform:translateY(4px);box-shadow:0 1px 0 #0b0f22}
+.ans.wrong{background:#5a1f2a;border-color:var(--bad);animation:shake .35s}
+.ans.right{background:#1d5a37;border-color:var(--good)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.back{background:#0006;border-radius:999px;padding:8px 16px;font-weight:800;font-size:16px}
+
+/* city */
+.city{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;min-height:260px;background:linear-gradient(#0000 85%, #0b0f22 85%);border-radius:22px;padding:12px 10px 18px}
+.bldg{position:relative;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;border-radius:8px 8px 2px 2px;font-family:var(--body);font-weight:800;font-size:clamp(20px,5.5vw,30px);color:#fff;transform-origin:bottom;transition:transform .5s cubic-bezier(.5,-.4,.8,.6), opacity .5s;
+  background-image:linear-gradient(#ffe08a 0 0),linear-gradient(#ffe08a 0 0);background-size:14px 12px;background-repeat:no-repeat;background-position:25% 70%,75% 85%;border:3px solid #ffffff22}
+.bldg span{background:#0009;border-radius:10px;padding:2px 8px;word-break:break-word;text-align:center;line-height:1.1}
+.bldg.flat{transform:scaleY(.06);opacity:.4}
+.bldg.wobble{animation:shake .35s}
+.stompbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+.hear{font-family:var(--display);font-size:22px;background:var(--crystal);color:var(--night);border-radius:16px;padding:12px 22px;box-shadow:0 5px 0 #237fa0}
+.target{font-family:var(--display);font-size:28px;color:var(--glow);min-height:36px;text-align:center}
+.toggle{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--ink-dim);font-weight:700}
+.toggle input{width:22px;height:22px}
+.mini{display:flex;justify-content:center}
+.mini svg{width:120px;height:auto}
+.stomp{animation:stomp .5s ease}
+@keyframes stomp{30%{transform:translateY(-20px)}60%{transform:translateY(4px)}}
+
+/* world map */
+.mapbox{border-radius:18px;overflow:hidden;border:3px solid #ffffff22;touch-action:manipulation}
+.mapbox svg{display:block;width:100%;height:auto;cursor:pointer}
+.water{fill:#1d4f8f}
+.land{stroke:#0b0f22;stroke-width:.8;stroke-linejoin:round;transition:filter .2s}
+.land.hit{filter:brightness(1.5) drop-shadow(0 0 4px #5fe08a)}
+.land.miss{filter:brightness(.55)}
+.ll,.ol,.mk{font-family:var(--body);font-weight:800;pointer-events:none;paint-order:stroke;stroke-linejoin:round}
+.ll{font-size:9px;fill:#fff;stroke:#0b0f22;stroke-width:2.5px}
+.ol{font-size:8px;fill:#b9f0ff;stroke:#0d2c55;stroke-width:2.5px;font-style:italic}
+.mk{font-size:10px;fill:#fff;stroke:#0b0f22;stroke-width:3px}
+.spot{fill:#5fe08a;stroke:#fff;stroke-width:2}
+.oops{fill:#ff6b6b;stroke:#fff;stroke-width:2}
+.fact{text-align:center;font-size:19px;line-height:1.35;min-height:52px;color:var(--ink);max-width:60ch;margin-inline:auto}
+.target{font-size:clamp(20px,5.5vw,28px)}
+
+/* quest */
+.trophy{font-size:15px;fill:#ffb547;stroke:#0b0f22;stroke-width:2.5px;paint-order:stroke;pointer-events:none}
+.radar{display:flex;gap:14px;align-items:center;background:#0006;border:2px solid #5fe08a55;border-radius:18px;padding:10px 14px}
+.radar .small{color:var(--good);letter-spacing:.12em;font-weight:800}
+.blip{flex:0 0 auto;width:44px;height:44px;border-radius:50%;border:3px solid var(--good);position:relative;background:radial-gradient(circle,#5fe08a55 0 30%,transparent 31%)}
+.blip::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--good);animation:ping 1.4s ease-out infinite}
+@keyframes ping{to{transform:scale(1.7);opacity:0}}
+.question.word{font-family:var(--body);font-weight:800;font-size:clamp(22px,6vw,32px);line-height:1.2;text-wrap:balance}
+.ans.word{font-family:var(--body);font-weight:800;font-size:clamp(17px,4.8vw,23px);line-height:1.15;padding:16px 8px}
+.defeated{transition:transform .8s ease,opacity .8s;transform:rotate(25deg) translateY(30px) scale(.8);opacity:.25}
+
+/* win */
+.win{text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.win svg{width:220px;max-width:70%}
+.win .big{font-family:var(--display);font-size:clamp(34px,9vw,52px);color:var(--glow)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+// ---------- storage (optional) ----------
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let stars=store.get("kz-stars",0), goal=store.get("kz-goal",50), prize=store.get("kz-prize","Movie night with popcorn");
+let mathLevel=store.get("kz-math","add"), wordLevel=store.get("kz-words","easy"), worldMode=store.get("kz-world","play");
+
+// ---------- sound ----------
+let ac=null;
+function ctx(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){ac=null}return ac}
+function tone(type,f1,f2,dur,vol){const a=ctx();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f1,a.currentTime);o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+dur);g.gain.setValueAtTime(vol,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur)}
+const sfx={roar(){tone("sawtooth",180,55,.7,.18);tone("square",90,40,.7,.08)},hit(){tone("square",300,60,.2,.15)},
+  good(){tone("sine",660,990,.18,.2)},bad(){tone("triangle",220,150,.25,.15)},beam(){tone("sawtooth",400,1600,.6,.12)},
+  win(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone("sine",f,f,.25,.2),i*140))}};
+function say(w){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.rate=.75;speechSynthesis.speak(u)}catch(e){}}
+
+// ---------- art (original characters) ----------
+const boulder=`<svg viewBox="0 0 200 190" aria-label="Boulderback, a crystal rhino kaiju">
+ <ellipse cx="100" cy="182" rx="70" ry="7" fill="#0006"/>
+ <path d="M30 140 Q5 150 12 120 Q20 132 40 125Z" fill="#c95a26"/>
+ <polygon points="70,58 82,22 92,60" fill="#5fd4ff"/><polygon points="92,52 108,10 118,56" fill="#9be6ff"/><polygon points="118,60 132,26 140,66" fill="#5fd4ff"/>
+ <ellipse cx="100" cy="115" rx="70" ry="58" fill="#e8743b"/>
+ <ellipse cx="112" cy="132" rx="38" ry="34" fill="#ffc48f"/>
+ <rect x="52" y="150" width="30" height="34" rx="12" fill="#c95a26"/><rect x="118" y="150" width="30" height="34" rx="12" fill="#c95a26"/>
+ <circle cx="150" cy="90" r="38" fill="#e8743b"/>
+ <polygon points="176,78 200,52 184,92" fill="#fff1d6"/>
+ <circle cx="150" cy="82" r="12" fill="#fff"/><circle cx="154" cy="83" r="6" fill="#141a33"/><circle cx="156" cy="80" r="2" fill="#fff"/>
+ <path d="M152 106 Q166 114 180 104" stroke="#7a2e0e" stroke-width="4" fill="none" stroke-linecap="round"/>
+ <circle cx="96" cy="100" r="5" fill="#c95a26"/><circle cx="80" cy="118" r="4" fill="#c95a26"/>
+</svg>`;
+const crab=`<svg viewBox="0 0 200 190" aria-label="Mecha-Crab, a robot enemy">
+ <ellipse cx="100" cy="182" rx="70" ry="7" fill="#0006"/>
+ <g stroke="#5d6785" stroke-width="8" stroke-linecap="round"><line x1="60" y1="140" x2="30" y2="178"/><line x1="80" y1="148" x2="66" y2="180"/><line x1="140" y1="140" x2="170" y2="178"/><line x1="120" y1="148" x2="134" y2="180"/></g>
+ <path d="M40 70 L10 40 L30 30 L50 55Z M30 30 Q20 10 45 18 L52 50Z" fill="#8f9ab8"/>
+ <path d="M160 70 L190 40 L170 30 L150 55Z M170 30 Q180 10 155 18 L148 50Z" fill="#8f9ab8"/>
+ <rect x="35" y="70" width="130" height="80" rx="30" fill="#8f9ab8"/>
+ <rect x="50" y="86" width="100" height="26" rx="13" fill="#141a33"/>
+ <rect x="58" y="92" width="84" height="14" rx="7" fill="#ff6b6b"/>
+ <circle cx="70" cy="132" r="5" fill="#5d6785"/><circle cx="100" cy="132" r="5" fill="#5d6785"/><circle cx="130" cy="132" r="5" fill="#5d6785"/>
+ <line x1="100" y1="70" x2="100" y2="46" stroke="#5d6785" stroke-width="5"/><circle cx="100" cy="42" r="7" fill="#ffb547"/>
+</svg>`;
+
+const magmaw=`<svg viewBox="0 0 200 190" aria-label="Magmaw, a volcano salamander kaiju">
+ <ellipse cx="100" cy="182" rx="78" ry="7" fill="#0006"/>
+ <circle cx="98" cy="30" r="8" fill="#ffffff44"/><circle cx="110" cy="17" r="10" fill="#ffffff33"/><circle cx="125" cy="8" r="7" fill="#ffffff26"/>
+ <path d="M30 130 Q0 142 6 110 Q18 125 40 118Z" fill="#5a2a22"/>
+ <rect x="40" y="148" width="24" height="32" rx="10" fill="#5a2a22"/><rect x="128" y="148" width="24" height="32" rx="10" fill="#5a2a22"/>
+ <ellipse cx="95" cy="128" rx="72" ry="40" fill="#6b2f26"/>
+ <polygon points="70,96 90,48 110,48 128,96" fill="#4a211b"/><ellipse cx="100" cy="49" rx="11" ry="4" fill="#ff8a2a"/>
+ <path d="M95 52 Q92 70 96 82 M106 52 Q110 66 106 76" stroke="#ff8a2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+ <path d="M38 124 l12 8 l10 -6 M118 142 l10 -8 l12 6 M70 150 l8 -6" stroke="#ff8a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+ <rect x="70" y="152" width="24" height="28" rx="10" fill="#5a2a22"/><rect x="104" y="152" width="24" height="28" rx="10" fill="#5a2a22"/>
+ <ellipse cx="160" cy="120" rx="34" ry="26" fill="#6b2f26"/>
+ <circle cx="166" cy="110" r="9" fill="#fff"/><circle cx="169" cy="111" r="5" fill="#141a33"/>
+ <path d="M150 132 Q170 142 190 128" stroke="#ff8a2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>`;
+const frostusk=`<svg viewBox="0 0 200 190" aria-label="Frostusk, an ice mammoth kaiju">
+ <ellipse cx="100" cy="182" rx="72" ry="7" fill="#0006"/>
+ <polygon points="62,62 72,34 82,62" fill="#dff6ff"/><polygon points="88,54 98,26 108,56" fill="#dff6ff"/><polygon points="112,60 120,38 128,64" fill="#dff6ff"/>
+ <rect x="44" y="140" width="34" height="42" rx="12" fill="#6676b0"/><rect x="112" y="140" width="34" height="42" rx="12" fill="#6676b0"/>
+ <ellipse cx="95" cy="110" rx="70" ry="56" fill="#7d8fc9"/>
+ <path d="M40 120 q8 -10 16 0 M70 140 q8 -10 16 0 M100 128 q8 -10 16 0" stroke="#6676b0" stroke-width="4" fill="none" stroke-linecap="round"/>
+ <circle cx="150" cy="92" r="36" fill="#8a9bd4"/>
+ <ellipse cx="128" cy="92" rx="16" ry="22" fill="#6676b0"/>
+ <path d="M176 98 Q196 128 182 160 Q174 168 168 158 Q182 132 160 112Z" fill="#8a9bd4"/>
+ <path d="M158 116 Q172 150 196 142 Q180 140 168 110Z" fill="#dff6ff" stroke="#9be6ff" stroke-width="2"/>
+ <circle cx="158" cy="82" r="9" fill="#fff"/><circle cx="161" cy="83" r="5" fill="#141a33"/>
+</svg>`;
+const gloomfin=`<svg viewBox="0 0 200 190" aria-label="Gloomfin, a deep-sea anglerfish kaiju">
+ <ellipse cx="100" cy="182" rx="70" ry="7" fill="#0006"/>
+ <polygon points="28,105 2,72 6,140" fill="#25505c"/>
+ <path d="M58 58 Q85 28 116 54Z" fill="#25505c"/>
+ <path d="M122 56 Q150 8 178 30" stroke="#25505c" stroke-width="5" fill="none"/>
+ <circle cx="180" cy="34" r="17" fill="#ffe06640"/><circle cx="180" cy="34" r="9" fill="#ffe066"/>
+ <path d="M60 148 Q48 186 86 182 Q80 166 86 150Z" fill="#25505c"/><path d="M112 150 Q102 186 140 182 Q134 166 138 150Z" fill="#25505c"/>
+ <ellipse cx="95" cy="105" rx="72" ry="55" fill="#2f5d6b"/>
+ <ellipse cx="105" cy="128" rx="45" ry="26" fill="#4f8a8f"/>
+ <path d="M124 104 Q162 152 192 98Z" fill="#141a33"/>
+ <polygon points="134,108 139,120 144,107" fill="#fff"/><polygon points="150,111 155,124 160,109" fill="#fff"/><polygon points="166,108 171,120 176,104" fill="#fff"/>
+ <circle cx="140" cy="78" r="11" fill="#fff"/><circle cx="143" cy="79" r="6" fill="#141a33"/>
+ <circle cx="70" cy="95" r="4" fill="#9be6ff"/><circle cx="85" cy="80" r="3" fill="#9be6ff"/><circle cx="60" cy="118" r="3" fill="#9be6ff"/>
+</svg>`;
+const MONSTERS={
+ boulder:{name:"Boulderback",svg:boulder,attack:"Crystal Beam",beam:"#5fd4ff",blurb:"is a giant rhino with crystal spikes."},
+ magmaw:{name:"Magmaw",svg:magmaw,attack:"Lava Blast",beam:"#ff8a2a",blurb:"has a real volcano on its back."},
+ frostusk:{name:"Frostusk",svg:frostusk,attack:"Blizzard Blast",beam:"#dff6ff",blurb:"is an ice-age mammoth as big as a skyscraper."},
+ gloomfin:{name:"Gloomfin",svg:gloomfin,attack:"Lure Flash",beam:"#ffe066",blurb:"crawled up from the deepest part of the ocean."}
+};
+let heroId=store.get("kz-hero","boulder"); if(!MONSTERS[heroId])heroId="boulder";
+const hero=()=>MONSTERS[heroId];
+let questQ=store.get("kz-questq","world"), questDone=store.get("kz-quest",[]), questEarned=0;
+if(!Array.isArray(questDone))questDone=[];
+
+// ---------- content ----------
+const WORDS={easy:["the","and","see","can","play","big","red","run","look","jump","here","you","said","come","down","help","is","go","we","my","up","to","it","in","me","not","one","two","blue","little"],
+ hard:["because","friend","their","would","could","there","where","which","again","every","about","after","were","know","once","laugh","many","thought","right","green","around","always","before","been","does","pretty","very","under","write","why"]};
+const rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+function mathQ(){let lv=mathLevel==="mix"?pick(["add","sub"]):mathLevel,a,b,ans,sym;
+ if(lv==="add"){a=rnd(11);b=rnd(11);ans=a+b;sym="+"}
+ else if(lv==="sub"){a=5+rnd(16);b=rnd(a+1);ans=a-b;sym="−"}
+ else{a=pick([2,5,10]);b=rnd(11);if(Math.random()<.5)[a,b]=[b,a];ans=a*b;sym="×"}
+ const opts=new Set([ans]);let tries=0;
+ while(opts.size<4&&tries<50){tries++;const d=ans+pick([-3,-2,-1,1,2,3,10,-10]);if(d>=0)opts.add(d)}
+ while(opts.size<4)opts.add(ans+opts.size+4);
+ return {text:`${a} ${sym} ${b}`,ans,opts:shuffle([...opts])}}
+
+// ---------- screens ----------
+const app=document.getElementById("app");
+function header(){return `<div class="top"><h1>Kaiju Study Battle</h1><div class="stars">★ <b id="starCount">${stars}</b> stars</div></div>`}
+function addStar(n=1){stars+=n;store.set("kz-stars",stars);const el=document.getElementById("starCount");if(el)el.textContent=stars}
+
+function home(){
+ const pct=Math.min(100,Math.round((stars%goal)/goal*100)), toGo=goal-(stars%goal);
+ app.innerHTML=header()+`
+ <div class="hero">${hero().svg}<div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+   <h2>Pick your kaiju!</h2>
+   <div class="roster">${Object.entries(MONSTERS).map(([k,m])=>`<button class="pickm" data-hero="${k}" aria-pressed="${heroId===k}">${m.svg}<span>${m.name}</span></button>`).join("")}</div>
+   <p><b>${hero().name}</b> ${hero().blurb} Three right answers in a row charges the <b>${hero().attack}</b>!</p></div></div>
+ <div class="modes">
+  <div class="mode"><h2>Monster Math</h2><p>Beat Mecha-Crab with 10 hits.</p>
+   <div class="chips" role="group" aria-label="Math type">
+    ${[["add","Adding"],["sub","Taking away"],["mix","Mix"],["mul","Times 2, 5, 10"]].map(([k,l])=>`<button class="chip" data-math="${k}" aria-pressed="${mathLevel===k}">${l}</button>`).join("")}
+   </div><button class="go" id="goMath">Fight!</button></div>
+  <div class="mode"><h2>Stomp the City</h2><p>Hear a word, find its building, stomp it flat.</p>
+   <div class="chips" role="group" aria-label="Word level">
+    ${[["easy","Starter words"],["hard","Tricky words"]].map(([k,l])=>`<button class="chip" data-words="${k}" aria-pressed="${wordLevel===k}">${l}</button>`).join("")}
+   </div><button class="go" id="goWords">Stomp!</button></div>
+  <div class="mode"><h2>World Stomp</h2><p>Stomp all 7 continents and swim all 5 oceans.</p>
+   <div class="chips" role="group" aria-label="World mode">
+    ${[["play","Play game"],["explore","Explore map"]].map(([k,l])=>`<button class="chip" data-world="${k}" aria-pressed="${worldMode===k}">${l}</button>`).join("")}
+   </div><button class="go" id="goWorld">Travel!</button></div>
+  <div class="mode"><h2>Kaiju Quest</h2><p>12 rival monsters are hiding around the world. Find them and battle! <b>${questDone.length} of 12 beaten.</b></p>
+   <div class="chips" role="group" aria-label="Battle questions">
+    ${[["world","World questions"],["math","Math questions"]].map(([k,l])=>`<button class="chip" data-questq="${k}" aria-pressed="${questQ===k}">${l}</button>`).join("")}
+   </div><button class="go" id="goQuest">Hunt!</button></div>
+ </div>
+ <div class="prize">
+  <div class="row"><b>Monster Prize</b><span class="small">${toGo} stars to go</span></div>
+  <div class="bar"><i style="width:${pct}%"></i></div>
+  <label for="prizeInput">Grown-ups: what does he earn every ${goal} stars?</label>
+  <input id="prizeInput" value="${prize.replace(/"/g,"&quot;")}" maxlength="60">
+ </div>`;
+ app.querySelectorAll("[data-hero]").forEach(b=>b.onclick=()=>{heroId=b.dataset.hero;store.set("kz-hero",heroId);ctx();sfx.roar();home()});
+ app.querySelectorAll("[data-math]").forEach(b=>b.onclick=()=>{mathLevel=b.dataset.math;store.set("kz-math",mathLevel);home()});
+ app.querySelectorAll("[data-words]").forEach(b=>b.onclick=()=>{wordLevel=b.dataset.words;store.set("kz-words",wordLevel);home()});
+ document.getElementById("goMath").onclick=()=>{ctx();sfx.roar();battle()};
+ document.getElementById("goWords").onclick=()=>{ctx();sfx.roar();city()};
+ app.querySelectorAll("[data-world]").forEach(b=>b.onclick=()=>{worldMode=b.dataset.world;store.set("kz-world",worldMode);home()});
+ document.getElementById("goWorld").onclick=()=>{ctx();sfx.roar();worldMap()};
+ app.querySelectorAll("[data-questq]").forEach(b=>b.onclick=()=>{questQ=b.dataset.questq;store.set("kz-questq",questQ);home()});
+ document.getElementById("goQuest").onclick=()=>{ctx();sfx.roar();questEarned=0;quest()};
+ document.getElementById("prizeInput").oninput=e=>{prize=e.target.value;store.set("kz-prize",prize)};
+}
+
+function battle(){
+ let hp=10, charge=0, q, firstTry=true, earned=0, busy=false;
+ app.innerHTML=header()+`
+ <div class="row"><button class="back" id="back">← Home</button><div class="charge" style="color:${hero().beam}">${hero().attack} <span class="cells" id="cells"><i></i><i></i><i></i></span></div></div>
+ <div class="arena"><div class="skyline">${"<span></span>".repeat(14).replace(/<span><\/span>/g,()=>`<span style="height:${30+rnd(70)}%"></span>`)}</div>
+  <div class="fighters">
+   <div class="fighter"><div class="hp me"><span>${hero().name}</span><div class="bar"><i style="width:100%"></i></div></div><div id="me">${hero().svg}</div></div>
+   <div class="fighter"><div class="hp enemy"><span>Mecha-Crab</span><div class="bar"><i id="ehp" style="width:100%"></i></div></div><div id="foe">${crab}</div></div>
+  </div><div class="beam" id="beam" style="--beam:${hero().beam}"></div><div class="pop" id="pop">POW!</div></div>
+ <div class="question" id="q"></div><div class="hint" id="hint">Pick the answer!</div>
+ <div class="answers" id="answers"></div>`;
+ document.getElementById("back").onclick=home;
+ const $=id=>document.getElementById(id);
+ function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+ function next(){q=mathQ();firstTry=true;busy=false;$("q").textContent=q.text;
+  $("answers").innerHTML=q.opts.map(o=>`<button class="ans" data-v="${o}">${o}</button>`).join("");
+  $("answers").querySelectorAll(".ans").forEach(b=>b.onclick=()=>answer(b))}
+ function answer(b){if(busy)return;const v=+b.dataset.v;
+  if(v===q.ans){busy=true;b.classList.add("right");if(firstTry){earned++;addStar()}
+   charge++;let dmg=1;
+   [...$("cells").children].forEach((c,i)=>c.classList.toggle("on",i<charge));
+   anim($("me"),"lunge");
+   if(charge>=3){dmg=2;charge=0;sfx.beam();anim($("beam"),"fire");$("pop").textContent=hero().attack.toUpperCase()+"!";$("hint").textContent=hero().attack+"! Double hit!"}
+   else{sfx.hit();$("pop").textContent=pick(["POW!","SMASH!","BOOM!","CRUNCH!"]);$("hint").textContent=pick(["Great job!","You got it!","Monster brain!","Awesome!"])}
+   $("hint").className="hint good";
+   setTimeout(()=>{anim($("foe"),"ouch");anim($("pop"),"show")},250);
+   hp=Math.max(0,hp-dmg);$("ehp").style.width=hp*10+"%";
+   if(charge===0)setTimeout(()=>[...$("cells").children].forEach(c=>c.classList.remove("on")),700);
+   setTimeout(()=>hp<=0?win("Mecha-Crab is beaten!",earned,"battle"):next(),hp<=0?900:850);
+  }else{firstTry=false;charge=0;[...$("cells").children].forEach(c=>c.classList.remove("on"));
+   sfx.bad();b.classList.add("wrong");b.disabled=true;$("hint").textContent="Not that one. Try again!";$("hint").className="hint bad"}}
+ next();
+}
+
+function city(){
+ let round=0, earned=0, target, firstTry=true, busy=false, help=store.get("kz-help",false);
+ const colors=["#3d5bd9","#8a4fd6","#d0457a","#2a9d8f","#e07a2b","#4a7fbf"];
+ app.innerHTML=header()+`
+ <div class="row"><button class="back" id="back">← Home</button><span class="small" id="count">Building 1 of 10</span></div>
+ <div class="mini" id="mini">${hero().svg}</div>
+ <div class="stompbar"><button class="hear" id="hear">🔊 Hear the word</button>
+  <label class="toggle"><input type="checkbox" id="help" ${help?"checked":""}> Show the word</label></div>
+ <div class="target" id="target"></div>
+ <div class="city" id="city"></div>
+ <div class="hint" id="hint">Tap the building with that word!</div>`;
+ const $=id=>document.getElementById(id);
+ $("back").onclick=home; $("hear").onclick=()=>say(target);
+ $("help").onchange=e=>{help=e.target.checked;store.set("kz-help",help);showTarget()};
+ function showTarget(){$("target").textContent=help?`Find: ${target}`:""}
+ function next(){if(round>=10)return win("The robot city is flat!",earned,"city");
+  busy=false;firstTry=true;$("count").textContent=`Building ${round+1} of 10`;
+  const list=WORDS[wordLevel];const set=new Set();while(set.size<4)set.add(pick(list));
+  const words=[...set];target=pick(words);showTarget();
+  $("city").innerHTML=words.map((w,i)=>`<button class="bldg" data-w="${w}" style="height:${150+rnd(90)}px;background-color:${colors[(i+round)%colors.length]}"><span>${w}</span></button>`).join("");
+  $("city").querySelectorAll(".bldg").forEach(b=>b.onclick=()=>tap(b));
+  setTimeout(()=>say(target),300)}
+ function tap(b){if(busy)return;
+  if(b.dataset.w===target){busy=true;if(firstTry){earned++;addStar()}
+   const m=$("mini");m.classList.remove("stomp");void m.offsetWidth;m.classList.add("stomp");
+   sfx.roar();setTimeout(()=>{sfx.hit();b.classList.add("flat")},250);
+   $("hint").textContent=pick(["STOMP! Great reading!","Crushed it!","You found it!"]);$("hint").className="hint good";
+   round++;setTimeout(next,1200)}
+  else{firstTry=false;sfx.bad();b.classList.remove("wobble");void b.offsetWidth;b.classList.add("wobble");
+   $("hint").textContent=`That says "${b.dataset.w}". Listen again!`;$("hint").className="hint bad";setTimeout(()=>say(target),600)}}
+ next();
+}
+
+// ---------- world map ----------
+const PLACES={
+ "North America":{land:1,color:"#e07a2b",lab:[-102,46],short:"N. America",fact:"North America is where you live! The USA, Canada, and Mexico are here.",
+  polys:[[[-165,65],[-140,70],[-100,72],[-80,65],[-62,56],[-55,48],[-70,43],[-76,35],[-81,26],[-90,29],[-97,26],[-97,18],[-86,15],[-78,8],[-92,15],[-105,20],[-115,30],[-125,40],[-125,50],[-140,58],[-155,58],[-165,60]],
+   [[-55,60],[-45,60],[-20,70],[-20,82],[-60,82],[-70,76]]]},
+ "South America":{land:1,color:"#2a9d8f",lab:[-60,-14],short:"S. America",fact:"South America has the Amazon, the biggest rainforest in the world.",
+  polys:[[[-78,8],[-60,10],[-50,0],[-35,-5],[-40,-22],[-48,-28],[-58,-38],[-65,-42],[-68,-55],[-74,-50],[-72,-30],[-71,-18],[-81,-5],[-80,2]]]},
+ "Europe":{land:1,color:"#8a4fd6",lab:[18,54],short:"Europe",fact:"Europe is a small continent with lots of countries and old castles.",
+  polys:[[[-10,36],[-9,43],[-2,44],[-5,48],[0,50],[5,54],[8,57],[5,62],[15,69],[28,71],[40,68],[45,60],[50,48],[40,45],[30,45],[28,41],[22,37],[15,38],[12,44],[8,44],[3,42],[-2,37]],
+   [[-6,50],[2,51],[-2,58],[-6,57]]]},
+ "Africa":{land:1,color:"#d9a33a",lab:[20,6],short:"Africa",fact:"Africa has the most countries of any continent: 54! Lions and elephants live there.",
+  polys:[[[-17,21],[-10,30],[-5,36],[10,37],[20,32],[32,31],[34,28],[43,12],[51,11],[40,-3],[40,-15],[35,-25],[20,-35],[18,-30],[12,-17],[13,-5],[9,4],[-8,4],[-17,13]]]},
+ "Asia":{land:1,color:"#d0457a",lab:[95,48],short:"Asia",fact:"Asia is the biggest continent. The tallest mountain, Mount Everest, is there.",
+  polys:[[[28,41],[40,45],[50,48],[45,60],[40,68],[60,70],[80,73],[105,78],[140,72],[180,68],[180,64],[160,60],[155,58],[140,52],[130,42],[122,40],[120,30],[110,20],[106,10],[100,13],[98,8],[93,20],[80,15],[77,8],[72,20],[60,25],[57,22],[52,16],[43,12],[34,28],[35,36]]]},
+ "Australia":{land:1,color:"#c4572b",lab:[134,-25],short:"Australia",fact:"Australia is a continent and a country. Kangaroos live there!",
+  polys:[[[114,-22],[122,-18],[130,-12],[137,-12],[142,-11],[146,-19],[153,-26],[150,-37],[140,-38],[132,-32],[116,-35],[114,-26]]]},
+ "Antarctica":{land:1,color:"#dfe8f5",lab:[0,-82],short:"Antarctica",fact:"Antarctica is the coldest place on Earth. Penguins live there!",
+  polys:[[[-180,-78],[-150,-76],[-110,-73],[-70,-65],[-50,-75],[-20,-72],[20,-70],[60,-67],[100,-66],[140,-67],[170,-72],[180,-78],[180,-90],[-180,-90]]]},
+ "Pacific Ocean":{lab:[-140,6],short:"Pacific",fact:"The Pacific is the biggest and deepest ocean. It's bigger than all the land put together!"},
+ "Atlantic Ocean":{lab:[-38,22],short:"Atlantic",fact:"The Atlantic Ocean is between the Americas and Europe and Africa."},
+ "Indian Ocean":{lab:[78,-22],short:"Indian",fact:"The Indian Ocean is the warmest ocean."},
+ "Arctic Ocean":{lab:[-150,80],short:"Arctic",fact:"The Arctic is the smallest ocean. Polar bears live on its ice."},
+ "Southern Ocean":{lab:[-100,-63],short:"Southern",fact:"The Southern Ocean goes all the way around Antarctica."}
+};
+function oceanAt(lon,lat){
+ if(lat>66)return "Arctic Ocean"; if(lat<-58)return "Southern Ocean";
+ if((lon>=-6&&lon<=36&&lat>=30&&lat<=46)||(lon>-95&&lon<=-70&&lat>=50))return "Atlantic Ocean";
+ if((lon>=20&&lon<=100&&lat<30)||(lon>100&&lon<=146&&lat<-10))return "Indian Ocean";
+ if((lon>-70&&lon<20)||(lon>=-100&&lon<=-70&&lat>8&&lat<32))return "Atlantic Ocean";
+ return "Pacific Ocean"}
+const xy=([lo,la])=>[lo+180,90-la];
+
+function worldMap(){
+ const explore=worldMode==="explore";
+ let order=shuffle(Object.keys(PLACES)), round=0, earned=0, firstTry=true, busy=false, names=explore||store.get("kz-names",false);
+ const lands=Object.entries(PLACES).filter(([,p])=>p.land).map(([n,p])=>p.polys.map(poly=>`<polygon class="land" data-place="${n}" fill="${p.color}" points="${poly.map(c=>xy(c).join(",")).join(" ")}"/>`).join("")).join("");
+ const labels=Object.entries(PLACES).map(([n,p])=>{const[x,y]=xy(p.lab);return `<text x="${x}" y="${y}" text-anchor="middle" class="${p.land?"ll":"ol"}">${p.short}</text>`}).join("");
+ app.innerHTML=header()+`
+ <div class="row"><button class="back" id="back">← Home</button><span class="small" id="count">${explore?"Explore: tap anything to hear its name":"Place 1 of 12"}</span></div>
+ <div class="row" style="justify-content:center;flex-wrap:nowrap"><div class="mini" id="mini" style="flex:0 0 auto">${hero().svg}</div>
+  <div class="target" id="target" style="min-width:0">${explore?`Where will ${hero().name} go?`:""}</div></div>
+ <div class="stompbar">${explore?"":`<button class="hear" id="hear">🔊 Hear it again</button>`}
+  ${explore?"":`<label class="toggle"><input type="checkbox" id="names" ${names?"checked":""}> Show names on map</label>`}</div>
+ <div class="mapbox"><svg id="map" viewBox="0 8 360 172" role="img" aria-label="World map">
+  <rect x="0" y="0" width="360" height="180" class="water"/>${lands}
+  <g id="labels" ${names?"":"hidden"}>${labels}</g><g id="marks"></g></svg></div>
+ <div class="hint" id="hint">${explore?"Tap a continent or an ocean.":"Tap the right place on the map!"}</div>
+ <p class="fact" id="fact"></p>`;
+ const $=id=>document.getElementById(id), svg=$("map");
+ $("back").onclick=home;
+ if(!explore){$("hear").onclick=()=>say(promptText());
+  $("names").onchange=e=>{names=e.target.checked;store.set("kz-names",names);$("labels").hidden=!names}}
+ const target=()=>order[round];
+ const promptText=()=>PLACES[target()].land?`Stomp on ${target()}!`:`Swim to the ${target()}!`;
+ function mark(x,y,cls,text){const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.innerHTML=`<circle cx="${x}" cy="${y}" r="7" class="${cls}"/><text x="${x}" y="${y-11}" text-anchor="middle" class="mk">${text}</text>`;
+  $("marks").appendChild(g);setTimeout(()=>g.remove(),1800)}
+ function flash(place,cls){svg.querySelectorAll(`[data-place="${place}"]`).forEach(p=>{p.classList.remove("hit","miss");void p.getBBox();p.classList.add(cls);setTimeout(()=>p.classList.remove(cls),1500)})}
+ function next(){if(round>=order.length)return win("You stomped the whole world!",earned,"map");
+  busy=false;firstTry=true;$("count").textContent=`Place ${round+1} of 12`;
+  $("target").textContent=promptText();$("fact").textContent="";
+  $("hint").textContent="Tap the right place on the map!";$("hint").className="hint";setTimeout(()=>say(promptText()),300)}
+ svg.onclick=e=>{if(busy)return;ctx();
+  const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const sp=p.matrixTransform(svg.getScreenCTM().inverse());
+  const place=e.target.dataset&&e.target.dataset.place||oceanAt(sp.x-180,90-sp.y);
+  if(explore){sfx.good();say(place);mark(sp.x,sp.y,"spot",PLACES[place].short);if(PLACES[place].land)flash(place,"hit");
+   $("target").textContent=place;$("fact").textContent=PLACES[place].fact;return}
+  if(place===target()){busy=true;if(firstTry){earned++;addStar()}
+   const m=$("mini");m.classList.remove("stomp");void m.offsetWidth;m.classList.add("stomp");
+   PLACES[place].land?(sfx.roar(),flash(place,"hit")):sfx.beam();
+   mark(sp.x,sp.y,"spot",PLACES[place].short);
+   $("hint").textContent=pick(["Found it!","Great map skills!","Kaiju explorer!"]);$("hint").className="hint good";
+   $("fact").textContent=PLACES[place].fact;say(PLACES[place].fact);
+   round++;setTimeout(next,4200)}
+  else{firstTry=false;sfx.bad();if(PLACES[place].land)flash(place,"miss");mark(sp.x,sp.y,"oops",PLACES[place].short);
+   $("hint").textContent=`That's ${PLACES[place].land?"":"the "}${place}. Try again!`;$("hint").className="hint bad"}};
+ if(!explore)next();
+}
+
+// ---------- kaiju quest ----------
+const RIVALS={
+ "North America":{name:"Twister Brute",c1:"#6f7d34",c2:"#c3cf72",horns:2,eyes:2},
+ "South America":{name:"Jungle Gnasher",c1:"#1f7a4a",c2:"#7fd6a0",horns:0,eyes:3},
+ "Europe":{name:"Castle Knocker",c1:"#6a6f80",c2:"#c9ccd8",horns:4,eyes:1},
+ "Africa":{name:"Savanna Stomper",c1:"#b07a2a",c2:"#f0c879",horns:2,eyes:2},
+ "Asia":{name:"Peak Phantom",c1:"#5a4a9a",c2:"#b6a6f0",horns:3,eyes:1},
+ "Australia":{name:"Outback Bouncer",c1:"#b3462e",c2:"#f39b7c",horns:1,eyes:2},
+ "Antarctica":{name:"Glacier Grumble",c1:"#4f7ea8",c2:"#d8ecff",horns:3,eyes:2},
+ "Pacific Ocean":{name:"Tidal Terror",c1:"#155a8a",c2:"#6fc3ee",horns:0,eyes:1},
+ "Atlantic Ocean":{name:"Shipwreck Shark",c1:"#36506b",c2:"#a9c2d9",horns:1,eyes:2},
+ "Indian Ocean":{name:"Coral Chomper",c1:"#c2477a",c2:"#ffadc9",horns:2,eyes:3},
+ "Arctic Ocean":{name:"Polar Prowler",c1:"#8ea3b8",c2:"#ffffff",horns:2,eyes:2},
+ "Southern Ocean":{name:"Iceberg Eel",c1:"#2c6f78",c2:"#9de0e0",horns:0,eyes:2}
+};
+function rivalSvg(r){
+ const horns=Array.from({length:r.horns},(_,i)=>{const x=r.horns===1?100:60+i*(80/(r.horns-1));return `<polygon points="${x-9},${62} ${x},${32} ${x+9},${62}" fill="${r.c2}"/>`}).join("");
+ const eyes=Array.from({length:r.eyes},(_,i)=>{const x=r.eyes===1?100:82+i*(36/(r.eyes-1));return `<circle cx="${x}" cy="88" r="${r.eyes===1?13:9}" fill="#fff"/><circle cx="${x-3}" cy="89" r="${r.eyes===1?7:5}" fill="#141a33"/>`}).join("");
+ return `<svg viewBox="0 0 200 190" aria-label="${r.name}">
+ <ellipse cx="100" cy="182" rx="66" ry="7" fill="#0006"/>
+ <rect x="60" y="140" width="28" height="42" rx="12" fill="${r.c1}"/><rect x="112" y="140" width="28" height="42" rx="12" fill="${r.c1}"/>
+ ${horns}
+ <ellipse cx="36" cy="118" rx="14" ry="26" fill="${r.c1}" transform="rotate(20 36 118)"/><ellipse cx="164" cy="118" rx="14" ry="26" fill="${r.c1}" transform="rotate(-20 164 118)"/>
+ <path d="M40 150 Q28 66 100 54 Q172 66 160 150 Q100 170 40 150Z" fill="${r.c1}"/>
+ <ellipse cx="100" cy="128" rx="40" ry="24" fill="${r.c2}" opacity=".55"/>
+ ${eyes}
+ <path d="M70 112 L80 122 L90 112 L100 122 L110 112 L120 122 L130 112" stroke="#fff" stroke-width="4" fill="none" stroke-linejoin="round"/>
+ <circle cx="58" cy="100" r="5" fill="${r.c2}"/><circle cx="146" cy="96" r="4" fill="${r.c2}"/>
+</svg>`}
+const CONTS=["North America","South America","Europe","Africa","Asia","Australia","Antarctica"];
+const OCEANS=["Pacific Ocean","Atlantic Ocean","Indian Ocean","Arctic Ocean","Southern Ocean"];
+const GEO=[
+ {q:"Which continent do we live on?",a:"North America"},{q:"Which is the biggest ocean?",a:"Pacific Ocean"},
+ {q:"Which is the smallest ocean?",a:"Arctic Ocean"},{q:"Which is the coldest continent?",a:"Antarctica"},
+ {q:"Which is the biggest continent?",a:"Asia"},{q:"Kangaroos live on which continent?",a:"Australia"},
+ {q:"The Amazon rainforest is on which continent?",a:"South America"},{q:"Which ocean goes all the way around Antarctica?",a:"Southern Ocean"},
+ {q:"Which ocean is the warmest?",a:"Indian Ocean"},{q:"Which continent has the most countries?",a:"Africa"},
+ {q:"Which ocean is between North America and Europe?",a:"Atlantic Ocean"},{q:"Penguins live on which continent?",a:"Antarctica"},
+ {q:"Polar bears live by which ocean?",a:"Arctic Ocean"},{q:"Lions and elephants live on which continent?",a:"Africa"},
+ {q:"Mount Everest is on which continent?",a:"Asia"},{q:"Which continent has lots of old castles?",a:"Europe"},
+ {q:"How many continents are there?",a:"7",pool:["5","7","9","12"]},{q:"How many oceans are there?",a:"5",pool:["3","5","7","10"]}
+];
+function geoQ(){const b=pick(GEO),pool=b.pool||(OCEANS.includes(b.a)?OCEANS:CONTS);
+ return {text:b.q,ans:b.a,word:true,opts:b.pool?shuffle([...b.pool]):shuffle([b.a,...shuffle(pool.filter(x=>x!==b.a)).slice(0,3)])}}
+
+function quest(){
+ if(questDone.length>=12){questDone=[];store.set("kz-quest",questDone)}
+ const left=Object.keys(PLACES).filter(p=>!questDone.includes(p)), target=pick(left);
+ let names=store.get("kz-names",false), misses=0, busy=false;
+ const lands=Object.entries(PLACES).filter(([,p])=>p.land).map(([n,p])=>p.polys.map(poly=>`<polygon class="land" data-place="${n}" fill="${p.color}" points="${poly.map(c=>xy(c).join(",")).join(" ")}"/>`).join("")).join("");
+ const labels=Object.entries(PLACES).map(([n,p])=>{const[x,y]=xy(p.lab);return `<text x="${x}" y="${y}" text-anchor="middle" class="${p.land?"ll":"ol"}">${p.short}</text>`}).join("");
+ const trophies=questDone.map(n=>{const[x,y]=xy(PLACES[n].lab);return `<text x="${x}" y="${y+12}" text-anchor="middle" class="trophy">★</text>`}).join("");
+ const where=PLACES[target].land?target:`the ${target}`;
+ app.innerHTML=header()+`
+ <div class="row"><button class="back" id="back">← Home</button><span class="small">Rivals beaten: <b>${questDone.length} of 12</b></span></div>
+ <div class="radar"><div class="blip"></div><div style="min-width:0"><div class="small">KAIJU RADAR</div><div class="target" style="text-align:left">A monster is hiding in ${where}!</div></div></div>
+ <div class="stompbar"><button class="hear" id="hear">🔊 Hear it</button>
+  <label class="toggle"><input type="checkbox" id="names" ${names?"checked":""}> Show names on map</label></div>
+ <div class="mapbox"><svg id="map" viewBox="0 8 360 172" role="img" aria-label="World map">
+  <rect x="0" y="0" width="360" height="180" class="water"/>${lands}
+  <g id="labels" ${names?"":"hidden"}>${labels}</g>${trophies}<g id="marks"></g></svg></div>
+ <div class="hint" id="hint">Tap ${where} to find it. Gold stars show rivals you already beat.</div>
+ <div class="row" style="justify-content:center"><button class="back" id="reset">Start a new quest</button></div>`;
+ const $=id=>document.getElementById(id), svg=$("map");
+ const msg=`A monster is hiding in ${where}! Can you find it?`;
+ $("back").onclick=home; $("hear").onclick=()=>say(msg); setTimeout(()=>say(msg),300);
+ $("names").onchange=e=>{names=e.target.checked;store.set("kz-names",names);$("labels").hidden=!names};
+ $("reset").onclick=()=>{questDone=[];store.set("kz-quest",questDone);quest()};
+ function mark(x,y,cls,text){const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.innerHTML=`<circle cx="${x}" cy="${y}" r="7" class="${cls}"/><text x="${x}" y="${y-11}" text-anchor="middle" class="mk">${text}</text>`;
+  $("marks").appendChild(g);setTimeout(()=>g.remove(),1800)}
+ svg.onclick=e=>{if(busy)return;ctx();
+  const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const sp=p.matrixTransform(svg.getScreenCTM().inverse());
+  const place=e.target.dataset&&e.target.dataset.place||oceanAt(sp.x-180,90-sp.y);
+  const name=PLACES[place].land?place:`the ${place}`;
+  if(place===target){busy=true;sfx.roar();mark(sp.x,sp.y,"spot","!!!");
+   $("hint").textContent=`You found it! ${RIVALS[place].name} is coming out!`;$("hint").className="hint good";
+   setTimeout(()=>rivalBattle(place),1300)}
+  else{misses++;sfx.bad();mark(sp.x,sp.y,"oops",PLACES[place].short);
+   $("hint").textContent=questDone.includes(place)?`You already beat the monster in ${name}. Keep searching!`:`Nothing here. That's ${name}. Keep searching!`;
+   $("hint").className="hint bad";
+   if(misses>=3&&!names){names=true;$("names").checked=true;$("labels").hidden=false;$("hint").textContent+=" I turned on the map names to help."}}};
+}
+
+function rivalBattle(place){
+ const r=RIVALS[place]; let hp=3, q, firstTry=true, busy=false;
+ app.innerHTML=header()+`
+ <div class="row"><button class="back" id="back">← Map</button><span class="small">Battle in ${PLACES[place].land?place:"the "+place}</span></div>
+ <div class="arena"><div class="skyline">${Array.from({length:14},()=>`<span style="height:${30+rnd(70)}%"></span>`).join("")}</div>
+  <div class="fighters">
+   <div class="fighter"><div class="hp me"><span>${hero().name}</span><div class="bar"><i style="width:100%"></i></div></div><div id="me">${hero().svg}</div></div>
+   <div class="fighter"><div class="hp enemy"><span>${r.name}</span><div class="bar"><i id="ehp" style="width:100%"></i></div></div><div id="foe">${rivalSvg(r)}</div></div>
+  </div><div class="beam" id="beam" style="--beam:${hero().beam}"></div><div class="pop" id="pop">POW!</div></div>
+ <div class="question" id="q"></div>
+ <div class="row" style="justify-content:center"><button class="back" id="hearQ">🔊 Read it to me</button></div>
+ <div class="hint" id="hint">${r.name} wants to fight! 3 hits wins.</div>
+ <div class="answers" id="answers"></div>`;
+ const $=id=>document.getElementById(id);
+ $("back").onclick=quest; $("hearQ").onclick=()=>say(q.text.replace("−","minus").replace("×","times"));
+ function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+ function next(){q=questQ==="math"?mathQ():geoQ();firstTry=true;busy=false;
+  $("q").textContent=q.text;$("q").className="question"+(q.word?" word":"");
+  if(q.word)setTimeout(()=>say(q.text),400);
+  $("answers").innerHTML=q.opts.map(o=>`<button class="ans${q.word?" word":""}" data-v="${o}">${o}</button>`).join("");
+  $("answers").querySelectorAll(".ans").forEach(b=>b.onclick=()=>answer(b))}
+ function answer(b){if(busy)return;
+  if(b.dataset.v===String(q.ans)){busy=true;b.classList.add("right");if(firstTry){questEarned++;addStar()}
+   anim($("me"),"lunge");hp--;
+   if(hp===0){sfx.beam();anim($("beam"),"fire");$("pop").textContent=hero().attack.toUpperCase()+"!"}
+   else{sfx.hit();$("pop").textContent=pick(["POW!","SMASH!","BOOM!","CRUNCH!"])}
+   setTimeout(()=>{anim($("foe"),"ouch");anim($("pop"),"show")},250);
+   $("ehp").style.width=(hp/3*100)+"%";
+   $("hint").textContent=hp?pick(["Great hit!","You got it!","Keep going!"]):`${hero().attack}! ${r.name} is beaten!`;$("hint").className="hint good";
+   if(hp===0){questDone.push(place);store.set("kz-quest",questDone);
+    setTimeout(()=>{$("foe").classList.add("defeated");sfx.win();say(`You beat ${r.name}!`)},700);
+    setTimeout(()=>questDone.length>=12?win("You beat every rival kaiju on Earth!",questEarned,"quest"):quest(),2600)}
+   else setTimeout(next,900)}
+  else{firstTry=false;sfx.bad();b.classList.add("wrong");b.disabled=true;$("hint").textContent="Not that one. Try again!";$("hint").className="hint bad"}}
+ setTimeout(()=>say(`${r.name} wants to fight!`),200);
+ next();
+}
+
+function win(msg,earned,mode){
+ sfx.win();
+ const toGo=goal-(stars%goal), hitGoal=stars>0&&stars%goal<earned;
+ app.innerHTML=header()+`<div class="win">${hero().svg}
+  <div class="big">You won!</div><h2>${msg}</h2>
+  <p style="font-size:22px">You earned <b style="color:var(--glow)">${earned} ★</b> this round.</p>
+  ${hitGoal?`<p style="font-size:22px;color:var(--good)"><b>Prize unlocked: ${prize.replace(/</g,"&lt;")}!</b></p>`:`<p class="small">${toGo} more stars until: ${prize.replace(/</g,"&lt;")}</p>`}
+  <div class="row" style="justify-content:center"><button class="go" id="again">Play again</button><button class="back" id="home">Home</button></div></div>`;
+ document.getElementById("again").onclick=()=>{sfx.roar();mode==="battle"?battle():mode==="map"?worldMap():mode==="quest"?(questEarned=0,quest()):city()};
+ document.getElementById("home").onclick=home;
+}
+home();
+})();
+</script>
+</body>
+</html>
